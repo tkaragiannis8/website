@@ -63,7 +63,7 @@ frontend. Run the development commands above from this directory. Deployment sta
 Set GitHub secrets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`,
 `AZURE_SUBSCRIPTION_ID` and variable `AZURE_FUNCTIONAPP_NAME`.
 
-The `.npmrc` uses a hoisted dependency layout for portable Azure deployment.
+The `pnpm-workspace.yaml` uses a hoisted dependency layout for portable Azure deployment.
 No resources, repositories, federation rules, or production secrets have been created.
 
 ## Protections and limitations
