@@ -1,0 +1,56 @@
+---
+import {legacy,ui,languages,languageNames,flags,contact,url,asset} from '../data/site.js';
+import Contact from './Contact.astro';
+import '../styles/global.css';
+import '@fontsource/manrope/400.css';
+import '@fontsource/manrope/500.css';
+import '@fontsource/manrope/600.css';
+import '@fontsource/manrope/700.css';
+const {lang='en',pageKey='home'}=Astro.props;
+const t=ui[lang];const pages=legacy[lang];const page=pages.find(p=>p.key===pageKey);
+const home=pageKey==='home';const isPrivacy=pageKey==='privacy';
+const title=home?`${t.name} | ${t.intro}`:`${isPrivacy?t.privacyTitle:page.label} | ${t.name}`;
+const canonical=new URL(url(lang,pageKey),Astro.site);
+const bodyHtml=page?.html.replaceAll('src="/assets/','src="'+asset('/assets/'))||'';
+const services=pages.filter(p=>['real-estate','business-law','private-client'].includes(p.key));
+---
+<!doctype html>
+<html lang={lang}>
+<head>
+ <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>{title}</title><meta name="description" content={`${t.name}. ${t.intro}. ${t.address}, ${t.city}. ${contact.phone}.`}/>
+ <link rel="canonical" href={canonical}/>{languages.map(l=><link rel="alternate" hreflang={l} href={new URL(url(l,pageKey),Astro.site)}/>)}<link rel="alternate" hreflang="x-default" href={new URL(url('en',pageKey),Astro.site)}/>
+ <meta name="theme-color" content="#314761"/><meta property="og:title" content={title}/><meta property="og:description" content={t.intro}/><meta property="og:type" content="website"/><meta property="og:url" content={canonical}/>
+ <link rel="icon" type="image/svg+xml" href={asset('/favicon.svg')}/>
+</head>
+<body>
+ <a class="skip" href="#main">{t.skip}</a>
+ <div class="utility"><div class="shell utility-inner"><a href={contact.map} target="_blank" rel="noopener noreferrer"><span aria-hidden="true">⌖</span> {t.address} · {t.city}</a><a href="tel:+302317003910">{contact.phone} <span aria-hidden="true">↗</span></a></div></div>
+ <header class="header"><div class="shell header-inner">
+  <a class="brand" href={url(lang)} aria-label={t.name+' — '+t.home}><span class="monogram" aria-hidden="true">TK<span></span></span><span class="brand-name">{t.name}<small>{t.firm}</small></span></a>
+  <nav class="desktop-nav" aria-label={t.nav}><a href={url(lang)+'#expertise'}>{t.services}</a><a href={url(lang)+'#about'}>{pages[0].label}</a><a href={url(lang,'publications')}>{pages[4].label}</a><a href={url(lang,'contact')}>{t.contactNav}</a></nav>
+  <div class="header-actions"><nav class="languages" aria-label={t.language}>{languages.map(l=><a href={url(l,pageKey)} lang={l} hreflang={l} aria-label={languageNames[l]} aria-current={lang===l?'true':undefined} title={languageNames[l]}><img src={asset('/flags/'+l+'.svg')} alt="" width="19" height="13"/><span>{l.toUpperCase()}</span></a>)}</nav><button class="menu-toggle" aria-expanded="false" aria-controls="mobile-nav">{t.menu}<span aria-hidden="true">☰</span></button></div>
+ </div><nav class="mobile-nav shell" id="mobile-nav" aria-label={t.nav} hidden>{pages.map(p=><a href={url(lang,p.key)}>{p.label}</a>)}</nav></header>
+ <main id="main">
+ {home?<>
+  <section class="hero shell">
+   <div class="hero-copy"><p class="eyebrow"><span class="status-dot"></span>{t.eyebrow}</p><h1>{t.headline}<br/><em>{t.headlineAccent}</em></h1><p class="hero-intro">{t.intro}</p><p class="hero-description">{pages[0].slides[0]||t.serviceSub}</p><a class="button burgundy" href={url(lang,'contact')}>{t.consult}<span aria-hidden="true">↗</span></a><div class="hero-credential"><span class="credential-rule"></span><span>{t.name}<small>{t.credential}</small></span></div></div>
+   <div class="hero-art" aria-hidden="true"><div class="art-grid"></div><span class="art-index">01 — TK</span><svg class="architecture" viewBox="0 0 500 650" fill="none"><defs><linearGradient id="face" x1="100" y1="0" x2="430" y2="650" gradientUnits="userSpaceOnUse"><stop stop-color="#dce2e6"/><stop offset="1" stop-color="#6a8296"/></linearGradient><linearGradient id="shade" x1="250" y1="180" x2="425" y2="500" gradientUnits="userSpaceOnUse"><stop stop-color="#62798f"/><stop offset="1" stop-color="#22384f"/></linearGradient></defs><path d="M80 548V209L288 110L421 182V550L246 629Z" fill="url(#shade)"/><path d="M80 209L288 110V498L80 548Z" fill="url(#face)"/>{Array.from({length:15},(_,i)=><path d={`M${91+i*13} ${204-i*6.2}V${545-i*3.1}`} stroke="#314761" stroke-opacity=".45" stroke-width="4"/>)}<path d="M288 110L421 182V550L288 498Z" fill="url(#shade)"/>{Array.from({length:9},(_,i)=><path d={`M${301+i*13} ${118+i*7}V${502+i*5}`} stroke="#aac0cf" stroke-opacity=".4" stroke-width="1.5"/>)}<path d="M80 548L288 498L421 550L246 629Z" fill="#8B2A4F"/><path d="M43 568L245 651L460 556M55 185L288 72L461 165M288 72V110" stroke="#cad7df" stroke-opacity=".5"/><circle cx="288" cy="72" r="4" fill="#b6c8d3"/></svg><div class="art-bottom"><span>THESSALONIKI<br/>GREECE</span><span>40°38′ N<br/>22°56′ E</span></div><div class="art-caption">{t.foot}</div></div>
+  </section>
+  <div class="expertise-strip"><div class="shell">{services.map((s,i)=><a href={url(lang,s.key)}><span class="small-index">0{i+1}</span>{s.label}<span aria-hidden="true">↗</span></a>)}</div></div>
+  <section class="section shell" id="expertise"><div class="section-header"><div><p class="eyebrow">{t.services}</p><h2>{t.serviceIntro}</h2></div><p>{t.serviceSub}</p></div><div class="services-grid">{services.map((s,i)=><a class="service-card" href={url(lang,s.key)}><div class="card-top"><span>0{i+1}</span><span class="service-symbol" aria-hidden="true">{['⌂','▥','◇'][i]}</span></div><h3>{s.label}</h3><p>{t.servicesShort[i]}</p><span class="card-link">{t.read}<span aria-hidden="true">↗</span></span></a>)}</div></section>
+  <section class="about-section" id="about"><div class="shell about-grid"><div class="about-intro"><p class="eyebrow">{t.aboutLabel}</p><h2>{t.about}</h2><p class="about-name">{t.name}</p><p class="credential">{t.credential}</p><div class="about-rule"></div><p class="about-tagline">{t.approach}</p></div><div class="prose about-prose" set:html={pages[0].html}></div></div></section>
+  <section class="section shell"><div class="section-header"><div><p class="eyebrow">{t.resources}</p><h2>{t.foot}</h2></div></div><div class="resource-grid">{pages.filter(p=>['publications','links'].includes(p.key)).map((p,i)=><a class="resource-card" href={url(lang,p.key)}><span class="eyebrow">{p.label}</span><h3>{p.title}</h3><span class="card-link">{t.view}<span aria-hidden="true">↗</span></span></a>)}</div><div class="legacy-notes">{pages[0].slides.slice(1).map((s,i)=><details><summary>{['01','02','03'][i]} <span>{t.approach}</span><span aria-hidden="true">+</span></summary><p>{s}</p></details>)}</div></section>
+ </>:<>
+  <section class="inner-hero shell"><a class="breadcrumb" href={url(lang)}>{t.home} <span aria-hidden="true">/</span></a><p class="eyebrow">{isPrivacy?t.privacyTitle:page.label}</p><h1>{isPrivacy?t.privacyTitle:page.title}</h1></section>
+  {pageKey!=='contact'&&<section class="shell article-grid"><aside class="article-aside"><span class="eyebrow">{t.services}</span>{pages.map(p=><a href={url(lang,p.key)} aria-current={p.key===pageKey?'page':undefined}>{p.label}<span aria-hidden="true">↗</span></a>)}<div class="aside-contact"><p>{t.address}<br/>{t.city}</p><a href="tel:+302317003910">{contact.phone}</a><a href={'mailto:'+contact.email}>{contact.email}</a></div></aside><article class="prose">{isPrivacy?<p>{t.privacyText}</p>:<><div set:html={bodyHtml}></div>{page.frames.filter(f=>f.includes('youtube')).map((f,i)=><div class="video-panel"><span class="eyebrow">{t.videos} / 0{i+1}</span><h3>{page.title}</h3><button type="button" class="button outline" data-embed={f.replace(/^http:/,'https:').replace(/^\/\//,'https://').replace('www.youtube.com','www.youtube-nocookie.com')} data-title={t.video+' '+(i+1)}>{t.play} <span aria-hidden="true">▷</span></button><small>{t.videoNote}</small></div>)}</>}</article></section>}
+ </>}
+ {!isPrivacy&&<div class="shell"><Contact lang={lang}/></div>}
+ </main>
+ <footer class="footer"><div class="shell"><div class="footer-top"><a class="brand" href={url(lang)}><span class="monogram" aria-hidden="true">TK<span></span></span><span class="brand-name">{t.name}<small>{t.firm}</small></span></a><p>{t.foot}</p></div><div class="footer-links">{pages.map(p=><a href={url(lang,p.key)}>{p.label}</a>)}</div><div class="footer-bottom"><span>© {new Date().getFullYear()} {t.name}. {t.rights}</span><a href={url(lang,'privacy')}>{t.privacyTitle}</a></div></div></footer>
+ <script>
+  const toggle=document.querySelector<HTMLButtonElement>('.menu-toggle');const menu=document.querySelector<HTMLElement>('#mobile-nav');
+  toggle?.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')==='true';toggle.setAttribute('aria-expanded',String(!open));menu!.hidden=open;});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&toggle?.getAttribute('aria-expanded')==='true'){toggle.setAttribute('aria-expanded','false');menu!.hidden=true;toggle.focus();}});
+ </script>
+</body></html>

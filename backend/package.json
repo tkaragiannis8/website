@@ -1,0 +1,10 @@
+{
+ "name":"theodoros-karagiannis-contact-api",
+ "version":"1.0.0",
+ "private":true,
+ "type":"module",
+ "main":"src/azure.mjs",
+ "scripts":{"test":"node --test", "start":"node src/server.mjs", "check":"node --check src/contact.mjs && node --check src/azure.mjs && node --check src/server.mjs"},
+ "engines":{"node":">=22"},
+ "dependencies":{"@azure/functions":"^4.7.2"}
+}

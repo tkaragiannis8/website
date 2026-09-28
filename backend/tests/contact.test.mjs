@@ -1,0 +1,20 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createContactHandler} from '../src/contact.mjs';
+const origin='https://theodoroskaragiannis.com';
+const env={ALLOWED_ORIGINS:origin,RECAPTCHA_ALLOWED_HOSTNAMES:'theodoroskaragiannis.com',RECAPTCHA_SECRET_KEY:'test-only',EMAILJS_SERVICE_ID:'test-only',EMAILJS_TEMPLATE_ID:'test-only',EMAILJS_PUBLIC_KEY:'test-only',EMAILJS_PRIVATE_KEY:'test-only'};
+const time=Date.parse('2026-09-28T10:00:00Z');
+const body={name:'Test Person',email:'person@example.com',message:'Please contact me about a property.',captchaToken:'test-token',consent:true,lang:'en',website:''};
+const request=(changes={})=>({method:'POST',origin,contentType:'application/json',ip:'test-client',rawBody:JSON.stringify(body),...changes});
+const proof={success:true,score:0.9,action:'submit',hostname:'theodoroskaragiannis.com',challenge_ts:new Date(time).toISOString()};
+function fixture(captcha=proof,deliveryOk=true){const calls=[];return {calls,handler:createContactHandler({env,now:()=>time,fetchImpl:async(url,options)=>{calls.push({url,options});return url.includes('google.com')?{ok:true,json:async()=>captcha}:{ok:deliveryOk};}})};}
+test('valid submission verifies captcha and sends only configured template fields',async()=>{const {handler,calls}=fixture();assert.equal((await handler(request())).status,200);assert.equal(calls.length,2);const payload=JSON.parse(calls[1].options.body);assert.equal(payload.template_params.email,body.email);assert.equal(payload.template_id,env.EMAILJS_TEMPLATE_ID);assert.ok(!('to_email' in payload.template_params));});
+test('missing production secrets fail closed',async()=>{const handler=createContactHandler({env:{ALLOWED_ORIGINS:origin},fetchImpl:()=>assert.fail('must not send')});assert.equal((await handler(request())).status,503);});
+test('reject foreign or missing origins',async()=>{const {handler,calls}=fixture();for(const origin of ['https://attacker.example',''])assert.equal((await handler(request({origin}))).status,403);assert.equal(calls.length,0);});
+test('preflight returns only the permitted origin',async()=>{const {handler}=fixture();const r=await handler(request({method:'OPTIONS'}));assert.equal(r.status,204);assert.equal(r.headers['Access-Control-Allow-Origin'],origin);});
+test('invalid, oversized, and incorrect media requests do not send',async()=>{for(const change of [{rawBody:'broken'},{rawBody:JSON.stringify({...body,email:'x\r\nBcc:y'})},{rawBody:JSON.stringify({...body,consent:false})},{rawBody:JSON.stringify({...body,website:'spam'})},{rawBody:' '.repeat(33000)},{contentType:'text/plain'}]){const {handler,calls}=fixture();assert.ok((await handler(request(change))).status>=400);assert.equal(calls.length,0);}});
+test('captcha requires correct action, hostname, numeric score and fresh timestamp',async()=>{for(const change of [{success:false},{action:'login'},{hostname:'attacker.example'},{score:0.1},{score:undefined},{score:'0.9'},{challenge_ts:'invalid'},{challenge_ts:new Date(time-130000).toISOString()}]){const {handler,calls}=fixture({...proof,...change});assert.equal((await handler(request())).status,400);assert.equal(calls.length,1);}});
+test('email delivery failure cannot return success',async()=>{const {handler}=fixture(proof,false);assert.equal((await handler(request())).status,502);});
+test('timeouts do not expose details',async()=>{const handler=createContactHandler({env,now:()=>time,fetchImpl:async()=>{throw Error('secret-provider-detail');}});const result=await handler(request());assert.equal(result.status,502);assert.ok(!result.body.includes('secret'));});
+test('duplicate token cannot send another email',async()=>{const {handler,calls}=fixture();assert.equal((await handler(request())).status,200);assert.equal((await handler(request())).status,409);assert.equal(calls.length,2);});
+test('requests beyond per-client limit receive retry instructions',async()=>{const {handler}=fixture();for(let i=0;i<5;i++)await handler(request({rawBody:'broken'}));const r=await handler(request());assert.equal(r.status,429);assert.equal(r.headers['Retry-After'],'60');});

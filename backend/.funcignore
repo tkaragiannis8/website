@@ -1,0 +1,7 @@
+node_modules/@azure/functions/types/
+.git/
+.github/
+tests/
+.env*
+local.settings.json
+README.md

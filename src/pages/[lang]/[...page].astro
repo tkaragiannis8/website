@@ -1,0 +1,6 @@
+---
+import Page from '../../components/Page.astro';
+import {languages,legacy} from '../../data/site.js';
+export function getStaticPaths(){return languages.flatMap(lang=>[...legacy[lang].map(p=>({params:{lang,page:p.key==='home'?undefined:p.key},props:{lang,pageKey:p.key}})),{params:{lang,page:'privacy'},props:{lang,pageKey:'privacy'}}]);}
+---
+<Page {...Astro.props}/>
