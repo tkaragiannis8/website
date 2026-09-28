@@ -18,3 +18,11 @@ test('production credentials are never embedded and unconfigured form fails visi
  const $=load(await readFile(new URL('en/contact/index.html',root),'utf8'));assert.equal($('.contact-form').length,1);if(!process.env.PUBLIC_CONTACT_API_URL||!process.env.PUBLIC_RECAPTCHA_SITE_KEY){assert.equal($('.contact-form button[type=submit][disabled]').length,1);assert.ok($('.form-note').text().length>20);}
  assert.equal($('input[name=name][maxlength="100"]').length,1);assert.equal($('textarea[maxlength="5000"]').length,1);assert.equal($('.map-panel iframe').length,0);
 });
+test('the secondary mobile number is shown only on the Russian pages',async()=>{
+ const ru=load(await readFile(new URL('ru/contact/index.html',root),'utf8'));
+ const en=load(await readFile(new URL('en/contact/index.html',root),'utf8'));
+ const el=load(await readFile(new URL('el/contact/index.html',root),'utf8'));
+ assert.equal(ru('a[href="tel:+306984334768"]').length,1);
+ assert.equal(en('a[href="tel:+306984334768"]').length,0);
+ assert.equal(el('a[href="tel:+306984334768"]').length,0);
+});
