@@ -23,12 +23,15 @@ test('the secondary mobile number is shown only on the Russian pages',async()=>{
  const en=load(await readFile(new URL('en/contact/index.html',root),'utf8'));
  const el=load(await readFile(new URL('el/contact/index.html',root),'utf8'));
  assert.equal(ru('.contact-details a[href="tel:+306984334768"]').length,1);
+ assert.equal(ru('.contact-details a.whatsapp-phone[href="https://wa.me/306984334768"]').length,1);
  assert.equal(ru('.contact-details a[href^="tel:"]').first().attr('href'),'tel:+306984334768');
  assert.equal(ru('.contact-details a[href^="tel:"]').last().attr('href'),'tel:+302317003910');
  assert.equal(en('.contact-details a[href="tel:+302317003910"]').length,1);
  assert.equal(el('.contact-details a[href="tel:+302317003910"]').length,1);
  assert.equal(en('.contact-details a[href="tel:+306984334768"]').length,0);
  assert.equal(el('.contact-details a[href="tel:+306984334768"]').length,0);
+ assert.equal(en('.contact-details a.whatsapp-phone').length,0);
+ assert.equal(el('.contact-details a.whatsapp-phone').length,0);
  assert.equal(ru('.utility-phones a').first().attr('href'),'tel:+306984334768');
  assert.equal(ru('.utility-phones a').last().attr('href'),'tel:+302317003910');
  assert.equal(en('.utility-phones a[href="tel:+306984334768"]').length,0);
