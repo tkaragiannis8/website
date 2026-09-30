@@ -31,7 +31,7 @@ const enabled=Boolean(endpoint&&(!captchaEnabled||sitekey));
  document.querySelectorAll<HTMLFormElement>('.contact-form').forEach(form=>{
   form.addEventListener('submit',async(event)=>{
    event.preventDefault();const d=form.dataset;
-   if(!d.endpoint||!d.sitekey)return;
+   if(!d.endpoint)return;
    const button=form.querySelector<HTMLButtonElement>('button[type=submit]')!;
    const status=form.querySelector<HTMLElement>('.form-status')!;
    button.disabled=true;button.textContent=d.sending!;status.textContent='';

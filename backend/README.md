@@ -6,11 +6,15 @@ architecture. Source reference: `nkomp18/atlasacl-backend`, commit
 
 ## Email architecture
 
-The inspected Atlas code verifies Google reCAPTCHA v3 and sends through **EmailJS**.
-It does not contain a direct Zoho API or OAuth implementation. If the client's
-Zoho mailbox is supported/configured as an EmailJS email service, the same pattern
-can be used. Confirm this with the final account details. Direct Zoho OAuth is a
-separate integration choice and has not been implemented or tested here.
+The API sends directly through the client's Zoho mailbox using authenticated SMTP.
+The configured mailbox is always used as `From`; the visitor's address is set as
+`Reply-To`. This avoids exposing a mail credential to the browser or using an
+additional email relay service.
+
+Use the exact SMTP host shown in the Zoho Mail account settings for the client's
+data centre. Zoho commonly supports port `465` with SSL or port `587` with STARTTLS.
+If two-factor authentication is enabled, create an app-specific password and store
+that in Azure instead of the normal account password. Never commit these values.
 
 No production email is sent without complete environment configuration.
 
@@ -41,9 +45,9 @@ frontend only receives the public site key and API URL.
    storage/resources; confirm the hosting cost with the client.
 2. Register reCAPTCHA v3 for the real hostnames, including any staging hostname
    used for end-to-end tests. Add origins with exact scheme and host, no paths.
-3. Set all environment values. Configure EmailJS's template with a fixed recipient,
-   sender owned by the client, and the visitor's email only as Reply-To. Use escaped
-   text fields for name, email and message, never unescaped HTML interpolation.
+3. Set the Zoho SMTP host, port, mailbox, app password, `MAIL_FROM`, and `MAIL_TO`.
+   Keep `MAIL_FROM` on the authenticated Zoho mailbox and use the visitor's email
+   only as Reply-To. The API sends plain text and does not log mail content.
 4. Configure an upstream shared rate limit (for example in the selected gateway).
    The included 5-request/minute limit is per process and is not shared across
    Azure instances. The Azure adapter uses `x-azure-clientip`; configure the trusted
@@ -73,4 +77,4 @@ single-use token tracking, CAPTCHA action/score/hostname/freshness validation,
 provider timeouts, and generic errors are implemented. Mail content and credentials
 are not logged. CAPTCHA replay protection also depends on Google's verification.
 Delivery errors never become success responses. Real service delivery and Azure
-hosting remain unverified until the client provides configuration.
+hosting remain unverified until the client provides the Zoho mailbox configuration.

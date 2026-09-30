@@ -1,13 +1,34 @@
 import {createHash} from 'node:crypto';
+import nodemailer from 'nodemailer';
 export const MAX_BYTES=32768;
-const required=['EMAILJS_SERVICE_ID','EMAILJS_TEMPLATE_ID','EMAILJS_PUBLIC_KEY','EMAILJS_PRIVATE_KEY','ALLOWED_ORIGINS'];
+const required=['ZOHO_SMTP_HOST','ZOHO_SMTP_PORT','ZOHO_SMTP_USER','ZOHO_SMTP_PASSWORD','MAIL_FROM','MAIL_TO','ALLOWED_ORIGINS'];
 const list=value=>(value||'').split(',').map(x=>x.trim()).filter(Boolean);
 const hash=value=>createHash('sha256').update(value).digest('hex');
+const mailText=({name,email,message,lang})=>[
+ `New website contact request (${lang})`,
+ '',
+ `Name: ${name}`,
+ `Email: ${email}`,
+ '',
+ message
+].join('\n');
+
+function createZohoMailer(env){
+ const port=Number(env.ZOHO_SMTP_PORT);
+ const transport=nodemailer.createTransport({
+  host:env.ZOHO_SMTP_HOST,
+  port,
+  secure:String(env.ZOHO_SMTP_SECURE??(port===465)).toLowerCase()==='true',
+  auth:{user:env.ZOHO_SMTP_USER,pass:env.ZOHO_SMTP_PASSWORD}
+ });
+ return message=>transport.sendMail(message);
+}
 
 // Per-process protection. Production also requires a gateway limit shared across instances.
-export function createContactHandler({env=process.env,fetchImpl=fetch,now=Date.now}={}){
+export function createContactHandler({env=process.env,fetchImpl=fetch,now=Date.now,sendMailImpl}={}){
  const captchaRequired=String(env.RECAPTCHA_REQUIRED??'true').toLowerCase()!=='false';
  const configured=[...required,...(captchaRequired?['RECAPTCHA_SECRET_KEY','RECAPTCHA_ALLOWED_HOSTNAMES']:[])];
+  const sendMail=sendMailImpl||createZohoMailer(env);
  const clients=new Map();const tokens=new Map();
  return async function contact({method,origin='',contentType='',rawBody='',ip='unknown'}){
   const allowed=list(env.ALLOWED_ORIGINS).includes(origin);
@@ -42,8 +63,13 @@ export function createContactHandler({env=process.env,fetchImpl=fetch,now=Date.n
     const captcha=await response.json();const age=time-Date.parse(captcha.challenge_ts);
     if(captcha.success!==true||typeof captcha.score!=='number'||!Number.isFinite(captcha.score)||captcha.score<0.5||captcha.action!=='submit'||!list(env.RECAPTCHA_ALLOWED_HOSTNAMES).includes(captcha.hostname)||!Number.isFinite(age)||age< -10000||age>120000)return reply(400,'captcha_failed');
    }
-   const result=await fetchImpl('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({service_id:env.EMAILJS_SERVICE_ID,template_id:env.EMAILJS_TEMPLATE_ID,user_id:env.EMAILJS_PUBLIC_KEY,accessToken:env.EMAILJS_PRIVATE_KEY,template_params:{name:name.trim(),email:email.trim(),message:message.trim(),language:lang}}),signal:AbortSignal.timeout(10000)});
-   if(!result.ok)return reply(502,'delivery_failed');
+   await sendMail({
+    from:env.MAIL_FROM,
+    to:env.MAIL_TO,
+    replyTo:email.trim(),
+    subject:`Website contact form — ${name.trim()}`,
+    text:mailText({name:name.trim(),email:email.trim(),message:message.trim(),lang})
+   });
    return reply(200,'sent');
   }catch{return reply(502,'service_unavailable');}
  };
