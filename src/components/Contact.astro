@@ -1,11 +1,7 @@
 ---
-import {contact,ui,legacy,url} from '../data/site.js';
+import {contact,ui,legacy} from '../data/site.js';
 const {lang}=Astro.props;
 const t=ui[lang];
-const endpoint=import.meta.env.PUBLIC_CONTACT_API_URL||'';
-const sitekey=import.meta.env.PUBLIC_RECAPTCHA_SITE_KEY||'';
-const captchaEnabled=import.meta.env.PUBLIC_CONTACT_CAPTCHA_ENABLED!=='false';
-const enabled=Boolean(endpoint&&(!captchaEnabled||sitekey));
 ---
 <section class="contact-section section" id="contact" aria-labelledby="contact-title">
  <div class="contact-heading"><p class="eyebrow">{t.contactLabel}</p><h2 id="contact-title">{t.contactTitle}</h2><p>{t.contactIntro}</p></div>
@@ -15,43 +11,14 @@ const enabled=Boolean(endpoint&&(!captchaEnabled||sitekey));
    <div><span class="eyebrow">{t.call}</span>{lang==='ru'&&<a href="tel:+306984334768">{contact.mobile}</a>}<a href="tel:+302317003910">{contact.phone}</a></div>
    <div><span class="eyebrow">{t.email}</span><a href={'mailto:'+contact.email}>{contact.email}</a></div>
   </div>
-  <form class="contact-form" data-endpoint={endpoint} data-sitekey={captchaEnabled?sitekey:''} data-captcha-enabled={captchaEnabled} data-lang={lang} data-success={t.success} data-failure={t.failure} data-sending={t.sending} data-send={t.send}>
-   <div class="form-row"><label>{t.nameLabel}<input name="name" required autocomplete="name" maxlength="100" disabled={!enabled}/></label><label>{t.emailLabel}<input name="email" type="email" required autocomplete="email" maxlength="254" disabled={!enabled}/></label></div>
-   <label>{t.messageLabel}<textarea name="message" required minlength="10" maxlength="5000" rows="4" disabled={!enabled}></textarea></label>
-   <div class="honey" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off"/></label></div>
-   <label class="consent"><input type="checkbox" name="consent" required disabled={!enabled}/><span>{t.privacy} <a href={url(lang,'privacy')}>{t.privacyTitle} ↗</a></span></label>
-   {!enabled&&<p class="form-note">{t.unavailable}</p>}
-   <button class="button burgundy" type="submit" disabled={!enabled}>{t.send}<span aria-hidden="true">↗</span></button>
-   <p class="form-status" role="status" aria-live="polite"></p>
-  </form>
+  <div class="contact-form contact-email-cta">
+   <p>{t.email}</p>
+   <a class="button burgundy" href="mailto:info@theodoroskaragiannis.com">{t.sendEmail}<span aria-hidden="true">↗</span></a>
+  </div>
  </div>
  <div class="map-panel"><div class="map-pattern" aria-hidden="true"></div><div class="map-label"><span class="map-pin" aria-hidden="true">⌖</span><strong>{t.address}</strong><span>{t.city}</span><button type="button" class="text-link" data-embed={legacy[lang].find(p=>p.key==='contact').frames[0]} data-title={t.office}>{t.map} ↗</button><small>{t.mapNote}</small></div></div>
 </section>
 <script>
- document.querySelectorAll<HTMLFormElement>('.contact-form').forEach(form=>{
-  form.addEventListener('submit',async(event)=>{
-   event.preventDefault();const d=form.dataset;
-   if(!d.endpoint)return;
-   const button=form.querySelector<HTMLButtonElement>('button[type=submit]')!;
-   const status=form.querySelector<HTMLElement>('.form-status')!;
-   button.disabled=true;button.textContent=d.sending!;status.textContent='';
-   try{
-    const values=Object.fromEntries(new FormData(form));
-    const payload={...values,consent:values.consent==='on',lang:d.lang};
-    if(d.captchaEnabled==='true'){
-     if(!(window as any).grecaptcha){
-      await new Promise<void>((resolve,reject)=>{const s=document.createElement('script');s.src='https://www.google.com/recaptcha/api.js?render='+encodeURIComponent(d.sitekey!);s.onload=()=>resolve();s.onerror=()=>reject(new Error('captcha'));document.head.append(s);});
-     }
-     const captcha=(window as any).grecaptcha;
-     await new Promise<void>(resolve=>captcha.ready(resolve));
-     payload.captchaToken=await captcha.execute(d.sitekey,{action:'submit'});
-    }
-    const response=await fetch(d.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});
-    if(!response.ok)throw new Error('submission');
-    form.reset();status.textContent=d.success!;
-   }catch{status.textContent=d.failure!;}finally{button.disabled=false;button.textContent=d.send!;}
-  });
- });
  document.querySelectorAll<HTMLButtonElement>('[data-embed]').forEach(button=>button.addEventListener('click',()=>{
   const iframe=document.createElement('iframe');iframe.src=button.dataset.embed!;iframe.title=button.dataset.title!;iframe.loading='lazy';iframe.referrerPolicy='no-referrer';iframe.allowFullscreen=true;
   button.closest('.map-panel,.video-panel')!.replaceChildren(iframe);
