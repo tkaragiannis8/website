@@ -50,7 +50,7 @@ const locale={en:'en_GB',el:'el_GR',ru:'ru_RU'}[lang];
 </head>
 <body>
  <a class="skip" href="#main">{t.skip}</a>
- <div class="utility"><div class="shell utility-inner"><a href={contact.map} target="_blank" rel="noopener noreferrer"><span aria-hidden="true">⌖</span> {t.address} · {t.city}</a><div class="utility-phones">{lang==='ru'&&<><a href="tel:+306984334768">{contact.mobile}</a><a class="whatsapp-phone" href="https://wa.me/306984334768" target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${contact.mobile}`}>WhatsApp</a></>}<a href="tel:+302317003910">{contact.phone} <span aria-hidden="true">↗</span></a></div></div></div>
+ <div class="utility"><div class="shell utility-inner"><a href={contact.map} target="_blank" rel="noopener noreferrer"><span aria-hidden="true">⌖</span> {t.address} · {t.city}</a><div class="utility-phones">{lang==='ru'&&<a href="tel:+306984334768">{contact.mobile}</a>}<a href="tel:+302317003910">{contact.phone} <span aria-hidden="true">↗</span></a></div></div></div>
  <header class="header"><div class="shell header-inner">
   <a class="brand" href={url(lang)} aria-label={t.name+' — '+t.home}><span class="monogram" aria-hidden="true">TK<span></span></span><span class="brand-name">{t.name}<small>{t.firm}</small></span></a>
   <nav class="desktop-nav" aria-label={t.nav}><a href={url(lang)+'#expertise'}>{t.services}</a><a href={url(lang)+'#about'}>{pages[0].label}</a><a href={url(lang,'publications')}>{pages[4].label}</a><a href={url(lang,'contact')}>{t.contactNav}</a></nav>
