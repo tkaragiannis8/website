@@ -1,5 +1,6 @@
 ---
 import {legacy,ui,languages,languageNames,flags,contact,url,asset} from '../data/site.js';
+import {seo} from '../data/seo.js';
 import Contact from './Contact.astro';
 import '../styles/global.css';
 import '@fontsource/manrope/400.css';
@@ -9,18 +10,42 @@ import '@fontsource/manrope/700.css';
 const {lang='en',pageKey='home'}=Astro.props;
 const t=ui[lang];const pages=legacy[lang];const page=pages.find(p=>p.key===pageKey);
 const home=pageKey==='home';const isPrivacy=pageKey==='privacy';
-const title=home?`${t.name} | ${t.intro}`:`${isPrivacy?t.privacyTitle:page.label} | ${t.name}`;
+const metadata=seo[lang]?.[pageKey]||seo.en.home;
+const title=metadata.title;
+const description=metadata.description;
 const canonical=new URL(url(lang,pageKey),Astro.site);
 const bodyHtml=page?.html.replaceAll('src="/assets/','src="'+asset('/assets/'))||'';
 const services=pages.filter(p=>['real-estate','business-law','private-client'].includes(p.key));
+const siteOrigin=Astro.site?.origin||canonical.origin;
+const organizationId=`${siteOrigin}/#legal-service`;
+const structuredData=[{
+ '@context':'https://schema.org',
+ '@type':'LegalService',
+ '@id':organizationId,
+ name:'Theodoros Karagiannis',
+ url:`${siteOrigin}/`,
+ description:seo.en.home.description,
+ telephone:contact.phone,
+ email:'info@theodoroskaragiannis.com',
+ address:{'@type':'PostalAddress',streetAddress:'27 Dodekanisou Street',addressLocality:'Thessaloniki',postalCode:'54625',addressCountry:'GR'},
+ areaServed:['Greece','Thessaloniki','Chalkidiki'],
+ availableLanguage:['English','Greek','Russian']
+}];
+if(home)structuredData.push({'@context':'https://schema.org','@type':'WebSite','@id':`${siteOrigin}/#website`,url:`${siteOrigin}/`,name:'Theodoros Karagiannis',inLanguage:lang,publisher:{'@id':organizationId}});
+if(!home)structuredData.push({'@context':'https://schema.org','@type':'BreadcrumbList','itemListElement':[
+ {'@type':'ListItem',position:1,name:t.home,item:new URL(url(lang),Astro.site).href},
+ {'@type':'ListItem',position:2,name:isPrivacy?t.privacyTitle:page.label,item:canonical.href}
+]});
+const locale={en:'en_GB',el:'el_GR',ru:'ru_RU'}[lang];
 ---
 <!doctype html>
 <html lang={lang}>
 <head>
  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
- <title>{title}</title><meta name="description" content={`${t.name}. ${t.intro}. ${t.address}, ${t.city}. ${contact.phone}.`}/>
+ <title>{title}</title><meta name="description" content={description}/><meta name="robots" content="index,follow,max-image-preview:large"/><meta name="author" content={t.name}/>
  <link rel="canonical" href={canonical}/>{languages.map(l=><link rel="alternate" hreflang={l} href={new URL(url(l,pageKey),Astro.site)}/>)}<link rel="alternate" hreflang="x-default" href={new URL(url('en',pageKey),Astro.site)}/>
- <meta name="theme-color" content="#314761"/><meta property="og:title" content={title}/><meta property="og:description" content={t.intro}/><meta property="og:type" content="website"/><meta property="og:url" content={canonical}/>
+ <meta name="theme-color" content="#314761"/><meta property="og:site_name" content="Theodoros Karagiannis"/><meta property="og:title" content={title}/><meta property="og:description" content={description}/><meta property="og:type" content="website"/><meta property="og:url" content={canonical}/><meta property="og:locale" content={locale}/>{languages.filter(l=>l!==lang).map(l=><meta property="og:locale:alternate" content={{en:'en_GB',el:'el_GR',ru:'ru_RU'}[l]}/>)}<meta name="twitter:card" content="summary"/><meta name="twitter:title" content={title}/><meta name="twitter:description" content={description}/>
+ <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
  <link rel="icon" type="image/svg+xml" href={asset('/favicon.svg')}/>
 </head>
 <body>
